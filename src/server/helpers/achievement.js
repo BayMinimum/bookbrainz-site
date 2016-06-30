@@ -162,6 +162,31 @@ function getLatestCreation(editorId) {
 		.catch(Revision.NotFoundError, () => Promise.resolve(false));
 }
 
+function getReleaseDate(revisionId) {
+	return new EditionRevision({id: revisionId})
+		.fetch({require: true})
+		.then((revision) => {
+			const rawSql =
+				`SELECT bookbrainz.release_event.* FROM bookbrainz.edition_revision FULL OUTER JOIN bookbrainz.edition_data ON bookbrainz.edition_revision.data_id=bookbrainz.edition_data.id INNER JOIN bookbrainz.release_event_set__release_event ON bookbrainz.release_event_set__release_event.set_id=bookbrainz.edition_data.release_event_set_id INNER JOIN bookbrainz.release_event ON bookbrainz.release_event.id=bookbrainz.release_event_set__release_event.release_event_id WHERE bookbrainz.edition_revision.id=${revision.id}`;
+			return Bookshelf.knex.raw(rawSql)
+				.then((out) => {
+					const rows = out.rows[0];
+					const date = new Date();
+					if (rows.year !== null) {
+						date.setFullYear(parseInt(rows.year, 10));
+					}
+					if (rows.month !== null) {
+						date.setMonth(parseInt(rows.month, 10));
+					}
+					if (rows.day !== null) {
+						date.setDate(parseInt(rows.day, 10));
+					}
+					return date;
+				});
+		})
+		.catch(EditionRevision.NotFoundError, () => Promise.resolve(false));
+}
+
 function processRevisionist(editorId) {
 	return new Editor({id: editorId})
 		.fetch()
