@@ -90,9 +90,9 @@ function testTiers(signal, editorId, tiers) {
 					name: tier.name
 				})
 					.fetch({require: true})
-					.then((achievement) =>
-						awardAchievement(editorId, achievement.id))
-			)
+					.then((award) =>
+						awardAchievement(editorId, award.id))
+			);
 			if (tier.titleName) {
 				promises.push(
 					new TitleType({title: tier.titleName})
@@ -104,7 +104,7 @@ function testTiers(signal, editorId, tiers) {
 			achievementTierPromise = Promise.all(promises);
 		}
 		else {
-			achievementTierPromise = null
+			achievementTierPromise = null;
 		}
 		return achievementTierPromise;
 	}));
@@ -114,7 +114,7 @@ function testTiers(signal, editorId, tiers) {
 
 function getTypeRevisions(revisionType, revisionString, editor) {
 	return revisionType
-		.query(function(qb) {
+		.query((qb) => {
 			qb.innerJoin('bookbrainz.revision',
 				'bookbrainz.revision.id',
 				`bookbrainz.${revisionString}.id`);
@@ -124,30 +124,26 @@ function getTypeRevisions(revisionType, revisionString, editor) {
 			qb.where('bookbrainz.revision.author_id', '=', editor);
 		})
 		.fetchAll()
-		.then((out) => {
-			return out.length;
-		})
+		.then((out) => out.length);
 }
 
 function getTypeCreation(revisionType, revisionString, editor) {
 	return revisionType
-		.query(function(qb) {
+		.query((qb) => {
 			qb.innerJoin('bookbrainz.revision',
 				'bookbrainz.revision.id',
 				`bookbrainz.${revisionString}.id`);
 			qb.groupBy(`${revisionString}.id`,
 				`${revisionString}.bbid`,
 				'revision.id');
-			qb.where('bookbrainz.revision.author_id', '=', editor)
+			qb.where('bookbrainz.revision.author_id', '=', editor);
 			qb.leftOuterJoin('bookbrainz.revision_parent',
 				'bookbrainz.revision_parent.child_id',
-				`bookbrainz.${revisionString}.id`)
+				`bookbrainz.${revisionString}.id`);
 			qb.whereNull('bookbrainz.revision_parent.parent_id');
 		})
 		.fetchAll()
-		.then((out) => {
-			return out.length;
-		});
+		.then((out) => out.length);
 }
 
 function processRevisionist(editorId) {
@@ -271,7 +267,7 @@ function processMarathoner(editorId) {
 		`SELECT DISTINCT created_at::date from bookbrainz.revision \
 		WHERE author_id=${editorId} \
 		and created_at > (SELECT CURRENT_DATE - INTERVAL \'29 days\');`;
-	
+
 	return Bookshelf.knex.raw(rawSql)
 		.then((out) => {
 			const tiers = [
