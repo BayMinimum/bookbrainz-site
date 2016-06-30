@@ -95,6 +95,9 @@ function testTiers(signal, editorId, tiers) {
 					.fetch({require: true})
 					.then((award) =>
 						awardAchievement(editorId, award.id))
+					.catch(() => Promise.reject(new Error(
+						`Achievement ${tier.name} does not exist in database`
+					)))
 			);
 			if (tier.titleName) {
 				promises.push(
@@ -102,6 +105,10 @@ function testTiers(signal, editorId, tiers) {
 						.fetch({require: true})
 						.then((title) =>
 							awardTitle(editorId, title.id))
+						.catch(() =>
+							Promise.reject(new Error(
+								`Title ${tier.titleName} does not exist in database`
+						)))
 				);
 			}
 			achievementTierPromise = Promise.all(promises);
@@ -145,8 +152,9 @@ function getTypeCreation(revisionType, revisionString, editor) {
 				`bookbrainz.${revisionString}.id`);
 			qb.whereNull('bookbrainz.revision_parent.parent_id');
 		})
-		.fetchAll()
-		.then((out) => out.length);
+		.fetchAll({require: true})
+		.then((out) => out.length)
+		.catch(() => Promise.resolve());
 }
 
 function getLatestCreation(editorId) {
@@ -167,7 +175,7 @@ function getReleaseDate(revisionId) {
 		.fetch({require: true})
 		.then((revision) => {
 			const rawSql =
-				`SELECT bookbrainz.release_event.* FROM bookbrainz.edition_revision FULL OUTER JOIN bookbrainz.edition_data ON bookbrainz.edition_revision.data_id=bookbrainz.edition_data.id INNER JOIN bookbrainz.release_event_set__release_event ON bookbrainz.release_event_set__release_event.set_id=bookbrainz.edition_data.release_event_set_id INNER JOIN bookbrainz.release_event ON bookbrainz.release_event.id=bookbrainz.release_event_set__release_event.release_event_id WHERE bookbrainz.edition_revision.id=${revision.id}`;
+				`SELECT bookbrainz.release_event.* FROM bookbrainz.edition_revision FULL OUTER JOIN bookbrainz.edition_data ON bookbrainz.edition_revision.data_id=bookbrainz.edition_data.id INNER JOIN bookbrainz.release_event_set__release_event ON bookbrainz.release_event_set__release_event.set_id=bookbrainz.edition_data.release_event_set_id INNER JOIN bookbrainz.release_event ON bookbrainz.release_event.id=bookbrainz.release_event_set__release_event.release_event_id WHERE bookbrainz.edition_revision.id=${revisionId}`;
 			return Bookshelf.knex.raw(rawSql)
 				.then((out) => {
 					const rows = out.rows[0];
@@ -184,7 +192,11 @@ function getReleaseDate(revisionId) {
 					return date;
 				});
 		})
-		.catch(EditionRevision.NotFoundError, () => Promise.resolve(false));
+		.catch(EditionRevision.NotFoundError, () => {
+			console.log("ERROR", "not found");
+			return Promise.reject(new Error('No date attribute on revision'))
+			}
+		);
 }
 
 function processRevisionist(editorId) {
@@ -318,48 +330,36 @@ function processMarathoner(editorId) {
 		});
 }
 
-function processTimeTraveller(editorId) {
-	return getLatestCreation(editorId)
-		.then((revision) => {
-			let timeTravellerPromise;
-			// possible edge case if no change on an edit
-			if (revision) {
-				timeTravellerPromise = getReleaseDate(revision.id)
-					.then((date) => {
-						let achievementPromise;
-						if (date === false) {
-							achievementPromise = Promise.resolve(false);
-						}
-						else {
-							let diff = Date.now() - date.getTime();
-							diff /= 1000 * 60 * 60 * 24;
-							if (diff < 0) {
-								achievementPromise = new AchievementType({
-									name: 'Time Traveller'
-								})
-									.fetch({require: true})
-									.then((award) =>
-										awardAchievement(editorId, award.id));
-							}
-							else {
-								achievementPromise = Promise.resolve(false);
-							}
-						}
-						return achievementPromise;
-					});
+function processTimeTraveller(editorId, revisionId) {
+	return getReleaseDate(revisionId)
+		.then((date) => {
+			console.log("time", date);
+			let achievementPromise;
+			if (date === false) {
+				achievementPromise = Promise.resolve(false);
 			}
 			else {
-				timeTravellerPromise = Promise.resolve(false);
+				let diff = Date.now() - date.getTime();
+				// convert diff to number of days
+				diff /= 1000 * 60 * 60 * 24;
+				const tiers = [{
+					threshold: -1,
+					name: 'Time Traveller',
+					titleName: 'Time Traveller'
+				}];
+				achievementPromise =
+					testTiers(diff, editorId, tiers);
 			}
-			return timeTravellerPromise;
-		});
+			return achievementPromise;
+		})
+		.catch(() => Promise.resolve(false));
 }
 
 achievement.processPageVisit = () => {
 
 };
 
-achievement.processEdit = (userid) =>
+achievement.processEdit = (userid, revisionid) =>
 	Promise.all(
 		processRevisionist(userid),
 		processCreatorCreator(userid),
@@ -370,7 +370,7 @@ achievement.processEdit = (userid) =>
 		processSprinter(userid),
 		processFunRunner(userid),
 		processMarathoner(userid),
-		processTimeTraveller(userid)
+		processTimeTraveller(userid, revisionid)
 	);
 
 
