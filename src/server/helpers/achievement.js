@@ -27,11 +27,14 @@ const CreatorRevision = require('bookbrainz-data').CreatorRevision;
 const EditionRevision = require('bookbrainz-data').EditionRevision;
 const PublicationRevision = require('bookbrainz-data').PublicationRevision;
 const PublisherRevision = require('bookbrainz-data').PublisherRevision;
+const Revision = require('bookbrainz-data').Revision;
 const WorkRevision = require('bookbrainz-data').WorkRevision;
 
 const Promise = require('bluebird');
 const achievement = {};
 const Bookshelf = require('bookbrainz-data').bookshelf;
+
+const NotFoundError = require('./error').NotFoundError;
 
 const _ = require('lodash');
 
@@ -144,6 +147,19 @@ function getTypeCreation(revisionType, revisionString, editor) {
 		})
 		.fetchAll()
 		.then((out) => out.length);
+}
+
+function getLatestCreation(editorId) {
+	return new Revision({authorId: editorId})
+		.query((qb) => {
+			qb.leftJoin('bookbrainz.revision_parent',
+				'bookbrainz.revision_parent.child_id',
+				'bookbrainz.revision.id');
+			qb.whereNull('bookbrainz.revision_parent.parent_id');
+			qb.orderBy('bookbrainz.revision.created_at', 'DESC');
+		})
+		.fetch({require: true})
+		.catch(Revision.NotFoundError, () => Promise.resolve(false));
 }
 
 function processRevisionist(editorId) {
