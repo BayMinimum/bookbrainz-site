@@ -24,4 +24,4 @@ const EditForm = React.createFactory(
 );
 const props = JSON.parse(document.getElementById('props').innerHTML);
 
-ReactDOM.render(EditForm(props), document.getElementById('awardForm'));
+ReactDOM.render(EditForm(props), document.getElementById('achievements-form'));

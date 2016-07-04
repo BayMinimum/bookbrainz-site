@@ -318,7 +318,10 @@ router.get('/:id/achievements', (req, res, next) => {
 				}));
 
 			res.render('editor/achievements', {
-				editor: editorJSON,
+				props: {
+					editor: editorJSON,
+					achievement: achievementJSON
+				},
 				markup
 			});
 		}
