@@ -340,7 +340,7 @@ function rankUpdate(editorId, bodyRank, rank) {
 			}
 		})
 		.then(() => {
-			if (bodyRank !== 'none') {
+			if (bodyRank !== '') {
 				return new AchievementUnlock({
 					achievementId: parseInt(bodyRank, 10),
 					editorId: parseInt(editorId, 10)
