@@ -1,19 +1,18 @@
 const React = require('react');
-
+const DragAndDropImage = require('../input/dndSelector.jsx').DragAndDropImage;
+const DragAndDrop = require('../input/dndSelector.jsx').DragAndDrop;
 module.exports = React.createClass({
 	displayName: 'AchievementForm',
 	handleSubmit(event) {
 		'use strict';
 
 		event.preventDefault();
-
 		const data = {
 			id: this.props.editor.id,
-			rank1: this.rank1,
-			rank2: this.rank2,
-			rank3: this.rank3
+			rank1: this.rank1.getValue(),
+			rank2: this.rank2.getValue(),
+			rank3: this.rank3.getValue()
 		}
-
 		request.post('/editor/:id/achievements')
 			.send(data)
 			.then(() => {
@@ -34,7 +33,12 @@ module.exports = React.createClass({
 				return (
 					<div className="row well">
 						<div className="col-md-2">
-							<img height="100px" src={achievement.badgeUrl}></img>
+						<DragAndDropImage
+							height="100px"
+							src={achievement.badgeUrl}
+							achievementId={achievement.id}
+							achievementName={achievement.name}
+						/>
 						</div>
 						<div className="col-md-8">
 							<div className="h2">
@@ -71,42 +75,13 @@ module.exports = React.createClass({
 		});
 
 		const nullOption = (<option value="none"> </option>)
-
 		const rankUpdate = (
 			<form id="rankSelectForm" method="post" className="form-horizontal">
-				<div className="form-group">
-					<label>Rank 1</label>
-					<div className="selectContainer">
-						<select
-							name="rank1"
-							className="form-control"
-							value={this.rank1}>
-							{nullOption}
-							{rankName}
-						</select>
-					</div>
+				<div className="row dnd-container form-group">
+					<DragAndDrop name="rank1"/>
+					<DragAndDrop name="rank2"/>
+					<DragAndDrop name="rank3"/>
 				</div>
-
-				<div className="form-group">
-					<label>Rank 2</label>
-					<div className="selectContainer">
-						<select name="rank2" className="form-control">
-							{nullOption}
-							{rankName}
-						</select>
-					</div>
-				</div>
-
-				<div className="form-group">
-					<label>Rank 3</label>
-					<div className="selectContainer">
-						<select name="rank3" className="form-control">
-							{nullOption}
-							{rankName}
-						</select>
-					</div>
-				</div>
-
 				<div className="form-group">
 					<button type="submit" className="btn btn-default">
 						update
@@ -116,9 +91,9 @@ module.exports = React.createClass({
 		)
 		return (
 			<div>
+				{rankUpdate}
 				<div className="h1">Unlocked Achievements</div>
 				{achievements}
-				{rankUpdate}
 				<div className="h1">Locked Achievements</div>
 				{locked}
 			</div>
