@@ -29,6 +29,7 @@ const PublicationRevision = require('bookbrainz-data').PublicationRevision;
 const PublisherRevision = require('bookbrainz-data').PublisherRevision;
 const Revision = require('bookbrainz-data').Revision;
 const WorkRevision = require('bookbrainz-data').WorkRevision;
+const EditorEntityVisits = require('bookbrainz-data').EditorEntityVisits;
 
 const Promise = require('bluebird');
 const achievement = {};
@@ -355,8 +356,22 @@ function processTimeTraveller(editorId, revisionId) {
 		.catch(() => Promise.resolve(false));
 }
 
-achievement.processPageVisit = () => {
+function processExplorer(editorId) {
+	return new EditorEntityVisits({editorId})
+		.fetchAll({require: true})
+		.then((visits) => {
+			const tiers = [
+				{threshold: 10, name: 'Explorer I'},
+				{threshold: 100, name: 'Explorer II'},
+				{threshold: 1000, name: 'Explorer II', titleName: 'Explorer'}
+			];
+			console.log(visits.length);
+			return testTiers(visits.length, editorId, tiers);
+		});
+}
 
+achievement.processPageVisit = (userId) => {
+	);
 };
 
 achievement.processEdit = (userid, revisionid) =>
