@@ -35,7 +35,7 @@ const Editor = require('bookbrainz-data').Editor;
 const IdentifierSet = require('bookbrainz-data').IdentifierSet;
 const Note = require('bookbrainz-data').Note;
 const Revision = require('bookbrainz-data').Revision;
-
+const EditorEntityVisits = require('bookbrainz-data').EditorEntityVisits;
 const handler = require('../../helpers/handler');
 const search = require('../../helpers/search');
 const utils = require('../../helpers/utils');
@@ -55,10 +55,28 @@ module.exports.displayEntity = (req, res) => {
 			(type) => type.id
 		);
 
-	res.render(
-		`entity/view/${entity.type.toLowerCase()}`,
-		{identifierTypes}
-	);
+	let editorEntityVisitPromise;
+	if (res.locals.user) {
+		editorEntityVisitPromise = new EditorEntityVisits({
+			editor_id: res.locals.user.id,
+			bbid: res.locals.entity.bbid
+		})
+		.save(null, {method: 'insert'})
+		.catch(() => {
+			// ignore duplicate visits
+		});
+	}
+	else {
+		editorEntityVisitPromise = Promise.resolve(false);
+	}
+
+	return editorEntityVisitPromise
+		.then(() => {
+			res.render(
+				`entity/view/${entity.type.toLowerCase()}`,
+				{identifierTypes}
+			);
+		});
 };
 
 module.exports.displayDeleteEntity = (req, res) => {
