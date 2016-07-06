@@ -371,6 +371,8 @@ function processExplorer(editorId) {
 }
 
 achievement.processPageVisit = (userId) => {
+	Promise.all(
+		processExplorer(userId)
 	);
 };
 
