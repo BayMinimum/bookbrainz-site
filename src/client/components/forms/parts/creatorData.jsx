@@ -25,6 +25,7 @@ const Input = require('react-bootstrap').Input;
 const Identifiers = require('./identifiers.jsx');
 const PartialDate = require('../../input/partialDate.jsx');
 const Select = require('../../input/select2.jsx');
+const RSelect = require('react-select');
 
 const validators = require('../../validators');
 
@@ -59,9 +60,25 @@ const CreatorData = React.createClass({
 	getInitialState() {
 		'use strict';
 
+		const prefillData = this.props.creator;
+		if (!prefillData) {
+			return {
+				ended: false,
+				selectedGender: null
+			};
+		}
+
 		return {
-			ended: this.props.creator ? this.props.creator.ended : false
+			ended: prefillData.ended,
+			selectedGender: prefillData.gender && prefillData.gender.id
 		};
+	},
+	updateGender(inputValue) {
+		'use strict';
+
+		this.setState({
+			selectedGender: inputValue
+		});
 	},
 	getValue() {
 		'use strict';
@@ -70,7 +87,7 @@ const CreatorData = React.createClass({
 			beginDate: this.begin.getValue(),
 			endDate: this.ended.getChecked() ? this.end.getValue() : '',
 			ended: this.ended.getChecked(),
-			gender: this.gender.getValue(),
+			gender: this.state.selectedGender,
 			creatorType: this.creatorType.getValue(),
 			disambiguation: this.disambiguation.getValue(),
 			annotation: this.annotation.getValue(),
@@ -94,7 +111,6 @@ const CreatorData = React.createClass({
 
 		let initialBeginDate = null;
 		let initialEndDate = null;
-		let initialGender = null;
 		let initialCreatorType = null;
 		let initialDisambiguation = null;
 		let initialAnnotation = null;
@@ -104,8 +120,6 @@ const CreatorData = React.createClass({
 		if (prefillData) {
 			initialBeginDate = prefillData.beginDate;
 			initialEndDate = prefillData.endDate;
-			initialGender = prefillData.gender ?
-				prefillData.gender.id : null;
 			initialCreatorType = prefillData.creatorType ?
 				prefillData.creatorType.id : null;
 			initialDisambiguation = prefillData.disambiguation ?
@@ -158,19 +172,17 @@ const CreatorData = React.createClass({
 						wrapperClassName="col-md-offset-4 col-md-4"
 						onChange={this.handleEnded}
 					/>
-					<Select
-						noDefault
-						defaultValue={initialGender}
-						idAttribute="id"
-						label="Gender"
-						labelAttribute="name"
-						labelClassName="col-md-4"
-						options={this.props.genders}
-						placeholder="Select gender…"
-						ref={(ref) => this.gender = ref}
-						select2Options={select2Options}
-						wrapperClassName="col-md-4"
-					/>
+				<Input wrapperClassName="col-md-4" labelClassName="col-md-4" label="Gender">
+						<RSelect
+						  labelKey="name"
+						  options={this.props.genders}
+						  placeholder="Select gender…"
+						  ref={(ref) => this.gender = ref}
+						  value={this.state.selectedGender}
+						  valueKey="id"
+						  onChange={this.updateGender}
+						/>
+				</Input>
 					<Select
 						noDefault
 						defaultValue={initialCreatorType}
